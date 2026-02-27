@@ -15,7 +15,7 @@
 ## Task3: Improve The Gameplay
 1. Ensure the initial board contains all types of fish. ✅
 2. Add an animation when an item moves from the board to the cells and another animation when identical items are cleared (scaling to 0). ✅
-3. Add a Time Attack Mode ❌ – Not implemented due to time constraints. <br>
+3. Add a Time Attack Mode ✅ <br>
 Add a 'Time Attack' button to the Home Screen to play a separate game mode. The player no longer loses the game when the cells are filled.
 The player can return an item from a cell to its initial position on the board by tapping it.
 The player loses if they fail to clear the board within 1 minute.
