@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using DG.Tweening;
+using UnityEngine;
 
 [Serializable]
 public class Item
 {
     public Cell Cell { get; private set; }
+    public Cell PreviousCell { get; private set; }
 
     public Transform View { get; private set; }
-
 
     public virtual void SetView()
     {
@@ -26,7 +26,19 @@ public class Item
         }
     }
 
-    protected virtual string GetPrefabName() { return string.Empty; }
+    public void Free()
+    {
+        if (Cell != null)
+        {
+            PreviousCell = Cell.IsBottomCell ? PreviousCell : Cell;
+            SetCell(null);
+        }
+    }
+
+    protected virtual string GetPrefabName()
+    {
+        return string.Empty;
+    }
 
     public virtual void SetCell(Cell cell)
     {
@@ -35,7 +47,8 @@ public class Item
 
     internal void AnimationMoveToPosition()
     {
-        if (View == null) return;
+        if (View == null)
+            return;
 
         View.DOMove(Cell.transform.position, 0.2f);
     }
@@ -58,7 +71,8 @@ public class Item
 
     public void SetSortingLayerHigher()
     {
-        if (View == null) return;
+        if (View == null)
+            return;
 
         SpriteRenderer sp = View.GetComponent<SpriteRenderer>();
         if (sp)
@@ -67,22 +81,22 @@ public class Item
         }
     }
 
-
     public void SetSortingLayerLower()
     {
-        if (View == null) return;
+        if (View == null)
+            return;
 
         SpriteRenderer sp = View.GetComponent<SpriteRenderer>();
         if (sp)
         {
             sp.sortingOrder = 0;
         }
-
     }
 
     internal void ShowAppearAnimation()
     {
-        if (View == null) return;
+        if (View == null)
+            return;
 
         Vector3 scale = View.localScale;
         View.localScale = Vector3.one * 0.1f;
@@ -98,17 +112,14 @@ public class Item
     {
         if (View)
         {
-            View.DOScale(0.1f, 0.1f).OnComplete(
-                () =>
+            View.DOScale(0.1f, 0.1f)
+                .OnComplete(() =>
                 {
                     GameObject.Destroy(View.gameObject);
                     View = null;
-                }
-                );
+                });
         }
     }
-
-
 
     internal void AnimateForHint()
     {

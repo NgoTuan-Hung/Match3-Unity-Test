@@ -30,7 +30,7 @@ public class BoardController : MonoBehaviour
     private bool m_hintIsShown;
 
     private bool m_gameOver;
-    private bool clicked = false;
+    private bool m_clicked = false;
 
     public void StartGame(GameManager gameManager, GameSettings gameSettings)
     {
@@ -42,7 +42,7 @@ public class BoardController : MonoBehaviour
 
         m_cam = Camera.main;
 
-        m_board = new Board(this.transform, gameSettings);
+        m_board = new Board(this.transform, gameManager, gameSettings);
 
         Fill();
     }
@@ -87,9 +87,9 @@ public class BoardController : MonoBehaviour
             }
         }
 
-        if (Input.GetMouseButtonDown(0) && !clicked)
+        if (Input.GetMouseButtonDown(0) && !m_clicked)
         {
-            clicked = true;
+            m_clicked = true;
             var hit = Physics2D.Raycast(
                 m_cam.ScreenToWorldPoint(Input.mousePosition),
                 Vector2.zero
@@ -99,8 +99,22 @@ public class BoardController : MonoBehaviour
                 m_isDragging = true;
                 m_hitCollider = hit.collider;
                 var cell = hit.collider.GetComponent<Cell>();
-                if (!cell.IsBottomCell)
-                    m_board.PutItemToBottom(cell, m_gameManager.GameOver, m_gameManager.GameWin);
+
+                switch (m_gameManager.LevelMode)
+                {
+                    case GameManager.eLevelMode.MOVES:
+                        if (!cell.IsBottomCell)
+                            m_board.PutItemToBottom(cell);
+                        break;
+                    case GameManager.eLevelMode.TIMER:
+                        if (!cell.IsBottomCell)
+                            m_board.PutItemToBottom(cell);
+                        else
+                            m_board.PutItemToTop(cell);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -112,7 +126,7 @@ public class BoardController : MonoBehaviour
 
     private void ResetRayCast()
     {
-        clicked = false;
+        m_clicked = false;
         m_isDragging = false;
         m_hitCollider = null;
     }
@@ -298,13 +312,9 @@ public class BoardController : MonoBehaviour
             yield return new WaitForSeconds(.5f);
 
             if (m_board.BottomCellCount - m_board.TotalBottomItem > 2)
-                m_board.PutRandomItemToBottom(m_gameManager.GameOver, m_gameManager.GameWin);
+                m_board.PutRandomItemToBottom();
             else
-                m_board.PutIdenticalItemToBottom(
-                    m_board.GetBottomItemType(0),
-                    m_gameManager.GameOver,
-                    m_gameManager.GameWin
-                );
+                m_board.PutIdenticalItemToBottom(m_board.GetBottomItemType(0));
         }
     }
 
@@ -317,9 +327,9 @@ public class BoardController : MonoBehaviour
             yield return new WaitForSeconds(.5f);
 
             if (m_board.BottomCellCount == 0)
-                m_board.PutRandomItemToBottom(m_gameManager.GameOver, m_gameManager.GameWin);
+                m_board.PutRandomItemToBottom();
             else
-                m_board.PutUniqueItemToBottom(m_gameManager.GameOver, m_gameManager.GameWin);
+                m_board.PutUniqueItemToBottom();
         }
     }
 }

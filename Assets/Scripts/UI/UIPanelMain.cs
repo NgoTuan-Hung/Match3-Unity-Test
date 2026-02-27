@@ -25,7 +25,7 @@ public class UIPanelMain : MonoBehaviour, IMenu
         btnMoves.onClick.AddListener(OnClickMoves);
         btnAutoWin.onClick.AddListener(OnClickAutoWin);
         btnAutoLose.onClick.AddListener(OnClickAutoLose);
-        // btnTimer.onClick.AddListener(OnClickTimer);
+        btnTimer.onClick.AddListener(OnClickTimer);
     }
 
     private void OnDestroy()

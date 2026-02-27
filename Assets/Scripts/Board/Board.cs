@@ -26,14 +26,17 @@ public class Board
     public int RemainedBoardItem { get; private set; }
     private Transform m_root;
     private int m_matchMin;
-    Dictionary<NormalItem.eNormalType, int> m_bottomTypesCount =
+    private Dictionary<NormalItem.eNormalType, int> m_bottomTypesCount =
         new Dictionary<NormalItem.eNormalType, int>();
+    private GameManager m_gameManager;
 
-    public Board(Transform transform, GameSettings gameSettings)
+    public Board(Transform transform, GameManager gameManager, GameSettings gameSettings)
     {
         m_root = transform;
 
         m_matchMin = gameSettings.MatchesMin;
+
+        m_gameManager = gameManager;
 
         this.boardSizeX = gameSettings.BoardSizeX;
         this.boardSizeY = gameSettings.BoardSizeY;
@@ -293,7 +296,7 @@ public class Board
             });
     }
 
-    public void PutItemToBottom(Cell cell, Action gameOverCallback, Action gameWinCallback)
+    public void PutItemToBottom(Cell cell)
     {
         if (TotalBottomItem >= BottomCellCount || cell.IsEmpty)
         {
@@ -329,9 +332,31 @@ public class Board
 
         m_bottomCells[putIndex].Assign(item);
         item.View.DOMove(m_bottomCells[putIndex].transform.position, 0.3f)
-            .OnComplete(() =>
-                HandlePlayBottomCell(item, putIndex, gameOverCallback, gameWinCallback)
-            );
+            .OnComplete(() => HandlePlayBottomCell(item, putIndex));
+    }
+
+    public void PutItemToTop(Cell cell)
+    {
+        if (cell.IsEmpty)
+        {
+            return;
+        }
+
+        RemainedBoardItem++;
+
+        var item = cell.Item as NormalItem;
+        var toCell = item.PreviousCell;
+        cell.Free();
+
+        var cellIndex = Array.IndexOf(m_bottomCells, cell);
+        if (cellIndex < BottomCellCount - 1 && !m_bottomCells[cellIndex + 1].IsEmpty)
+            ShiftBottomItemsToLeft(cellIndex + 1, 1);
+        TotalBottomItem--;
+
+        toCell.Assign(item);
+        item.View.DOMove(toCell.transform.position, 0.3f);
+
+        m_bottomTypesCount[item.ItemType]--;
     }
 
     void ShiftBottomItemsToRight(int index)
@@ -358,12 +383,7 @@ public class Board
         item.View.transform.position = to.transform.position;
     }
 
-    void HandlePlayBottomCell(
-        NormalItem item,
-        int putIndex,
-        Action gameOverCallback,
-        Action gameWinCallback
-    )
+    void HandlePlayBottomCell(NormalItem item, int putIndex)
     {
         if (m_bottomTypesCount[item.ItemType] == 2)
         {
@@ -376,13 +396,16 @@ public class Board
             TotalBottomItem -= 3;
 
             if (RemainedBoardItem == 0)
-                gameWinCallback?.Invoke();
+                m_gameManager.GameWin();
         }
         else
             m_bottomTypesCount[item.ItemType]++;
 
-        if (TotalBottomItem == BottomCellCount)
-            gameOverCallback?.Invoke();
+        if (
+            TotalBottomItem == BottomCellCount
+            && m_gameManager.LevelMode == GameManager.eLevelMode.MOVES
+        )
+            m_gameManager.GameOver();
     }
 
     public List<Cell> GetHorizontalMatches(Cell cell)
@@ -914,7 +937,7 @@ public class Board
         }
     }
 
-    public void PutRandomItemToBottom(Action gameOverCallback, Action gameWinCallback)
+    public void PutRandomItemToBottom()
     {
         for (int x = 0; x < boardSizeX; x++)
         {
@@ -923,7 +946,7 @@ public class Board
                 Cell cell = m_cells[x, y];
                 if (!cell.IsEmpty)
                 {
-                    PutItemToBottom(cell, gameOverCallback, gameWinCallback);
+                    PutItemToBottom(cell);
                     return;
                 }
             }
@@ -933,11 +956,7 @@ public class Board
     public NormalItem.eNormalType GetBottomItemType(int index) =>
         (m_bottomCells[index].Item as NormalItem).ItemType;
 
-    public void PutIdenticalItemToBottom(
-        NormalItem.eNormalType eNormalType,
-        Action gameOverCallback,
-        Action gameWinCallback
-    )
+    public void PutIdenticalItemToBottom(NormalItem.eNormalType eNormalType)
     {
         for (int x = 0; x < boardSizeX; x++)
         {
@@ -946,14 +965,14 @@ public class Board
                 Cell cell = m_cells[x, y];
                 if (!cell.IsEmpty && (cell.Item as NormalItem).ItemType == eNormalType)
                 {
-                    PutItemToBottom(cell, gameOverCallback, gameWinCallback);
+                    PutItemToBottom(cell);
                     return;
                 }
             }
         }
     }
 
-    public void PutUniqueItemToBottom(Action gameOverCallback, Action gameWinCallback)
+    public void PutUniqueItemToBottom()
     {
         for (int x = 0; x < boardSizeX; x++)
         {
@@ -962,7 +981,7 @@ public class Board
                 Cell cell = m_cells[x, y];
                 if (!cell.IsEmpty && IsItemUniqueInBottom((cell.Item as NormalItem).ItemType))
                 {
-                    PutItemToBottom(cell, gameOverCallback, gameWinCallback);
+                    PutItemToBottom(cell);
                     return;
                 }
             }

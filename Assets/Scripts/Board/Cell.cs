@@ -33,7 +33,11 @@ public class Cell : MonoBehaviour
 
     public void Free()
     {
-        Item = null;
+        if (Item != null)
+        {
+            Item.Free();
+            Item = null;
+        }
     }
 
     public void Assign(Item item)

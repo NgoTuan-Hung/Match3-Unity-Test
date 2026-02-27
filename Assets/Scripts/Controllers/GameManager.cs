@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
         MOVES,
     }
 
+    public eLevelMode LevelMode { get; private set; }
+
     public enum eStateGame
     {
         SETUP,
@@ -105,14 +107,14 @@ public class GameManager : MonoBehaviour
         {
             m_levelCondition = this.gameObject.AddComponent<LevelTime>();
             m_levelCondition.Setup(
-                m_gameSettings.LevelMoves,
+                m_gameSettings.LevelTime,
                 m_uiMenu.GetLevelConditionView(),
                 this
             );
         }
+        LevelMode = mode;
 
         m_levelCondition.ConditionCompleteEvent += GameOver;
-        m_levelCondition.ConditionCompleteEvent += GameWin;
 
         State = eStateGame.GAME_STARTED;
         transform.DOMove(Vector3.zero, 0.5f);
@@ -183,7 +185,7 @@ public class GameManager : MonoBehaviour
 
         if (m_levelCondition != null)
         {
-            m_levelCondition.ConditionCompleteEvent -= GameWin;
+            m_levelCondition.ConditionCompleteEvent -= GameOver;
 
             Destroy(m_levelCondition);
             m_levelCondition = null;
