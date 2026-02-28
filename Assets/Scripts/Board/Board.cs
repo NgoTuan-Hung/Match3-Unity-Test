@@ -331,8 +331,10 @@ public class Board
         }
 
         m_bottomCells[putIndex].Assign(item);
-        item.View.DOMove(m_bottomCells[putIndex].transform.position, 0.3f)
-            .OnComplete(() => HandlePlayBottomCell(item, putIndex));
+        item.MoveToPosition(
+            m_bottomCells[putIndex].transform.position,
+            () => HandlePlayBottomCell(item)
+        );
     }
 
     public void PutItemToTop(Cell cell)
@@ -369,9 +371,10 @@ public class Board
 
     void ShiftBottomItemsToLeft(int startIndex, int shiftValue)
     {
-        for (int i = startIndex; i < TotalBottomItem; i++)
+        for (int i = startIndex; i < BottomCellCount; i++)
         {
-            TransferItem(m_bottomCells[i], m_bottomCells[i - shiftValue]);
+            if (!m_bottomCells[i].IsEmpty)
+                TransferItem(m_bottomCells[i], m_bottomCells[i - shiftValue]);
         }
     }
 
@@ -380,20 +383,22 @@ public class Board
         Item item = from.Item;
         from.Free();
         to.Assign(item);
+        to.FinishItemMoveIfAny();
         item.View.transform.position = to.transform.position;
     }
 
-    void HandlePlayBottomCell(NormalItem item, int putIndex)
+    void HandlePlayBottomCell(NormalItem item)
     {
+        var cellIndex = Array.IndexOf(m_bottomCells, item.Cell);
         if (m_bottomTypesCount[item.ItemType] == 2)
         {
             for (int i = 0; i < 3; i++)
-                m_bottomCells[putIndex - i].ExplodeItem();
+                m_bottomCells[cellIndex - i].ExplodeItem();
 
-            ShiftBottomItemsToLeft(putIndex + 1, 3);
+            ShiftBottomItemsToLeft(cellIndex + 1, 3);
+            TotalBottomItem -= 3;
 
             m_bottomTypesCount[item.ItemType] = 0;
-            TotalBottomItem -= 3;
 
             if (RemainedBoardItem == 0)
                 m_gameManager.GameWin();

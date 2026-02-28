@@ -11,6 +11,7 @@ public class Item
     public Cell PreviousCell { get; private set; }
 
     public Transform View { get; private set; }
+    private Tween m_moveTween;
 
     public virtual void SetView()
     {
@@ -23,6 +24,20 @@ public class Item
             {
                 View = GameObject.Instantiate(prefab).transform;
             }
+        }
+    }
+
+    public void MoveToPosition(Vector3 pos, Action complete)
+    {
+        m_moveTween = View.DOMove(pos, 0.3f).OnComplete(() => complete?.Invoke());
+    }
+
+    public void FinishMoveIfAny()
+    {
+        if (m_moveTween != null)
+        {
+            m_moveTween.Kill(true);
+            m_moveTween = null;
         }
     }
 

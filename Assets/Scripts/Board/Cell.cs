@@ -93,4 +93,6 @@ public class Cell : MonoBehaviour
     {
         Item.AnimationMoveToPosition();
     }
+
+    internal void FinishItemMoveIfAny() => Item?.FinishMoveIfAny();
 }
