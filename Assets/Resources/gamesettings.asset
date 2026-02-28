@@ -18,4 +18,4 @@ MonoBehaviour:
   LevelMoves: 16
   LevelTime: 60
   TimeForHint: 5
-  BottomCellCount: 6
+  BottomCellCount: 5
