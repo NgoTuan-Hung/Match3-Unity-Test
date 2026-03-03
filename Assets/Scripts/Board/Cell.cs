@@ -16,7 +16,7 @@ public class Cell : MonoBehaviour
     public Cell NeighbourBottom { get; set; }
 
     public Cell NeighbourLeft { get; set; }
-    public bool IsBottomCell = false;
+    public bool IsBottomCell { get; private set; }
     public bool IsEmpty => Item == null;
 
     public void Setup(int cellX, int cellY)
@@ -95,4 +95,6 @@ public class Cell : MonoBehaviour
     }
 
     internal void FinishItemMoveIfAny() => Item?.FinishMoveIfAny();
+
+    internal void SetAsBottomCell() => IsBottomCell = true;
 }

@@ -15,8 +15,10 @@ public class Board
         ALL,
     }
 
-    private int boardSizeX;
+    private Dictionary<NormalItem.eNormalType, int> m_typesPool =
+        new Dictionary<NormalItem.eNormalType, int>();
 
+    private int boardSizeX;
     private int boardSizeY;
     public int BottomCellCount { get; private set; }
 
@@ -86,18 +88,18 @@ public class Board
         CreateBottomCells(prefabBG);
     }
 
-    private void CreateBottomCells(GameObject cellPF)
+    private void CreateBottomCells(GameObject cellPfab)
     {
         var origin = new Vector3(-BottomCellCount * 0.5f + 0.5f, -boardSizeY * 0.5f - 1.5f, 0f);
         m_bottomCells = new Cell[BottomCellCount];
         for (int i = 0; i < BottomCellCount; i++)
         {
-            GameObject go = GameObject.Instantiate(cellPF);
+            GameObject go = GameObject.Instantiate(cellPfab);
             go.transform.position = new Vector3(origin.x + i, origin.y, 0f);
             go.transform.SetParent(m_root);
 
             m_bottomCells[i] = go.GetComponent<Cell>();
-            m_bottomCells[i].IsBottomCell = true;
+            m_bottomCells[i].SetAsBottomCell();
         }
     }
 
@@ -110,106 +112,71 @@ public class Board
             for (int y = 0; y < boardSizeY; y++)
             {
                 Cell cell = m_cells[x, y];
-                NormalItem item = new NormalItem();
-
-                List<NormalItem.eNormalType> types = new List<NormalItem.eNormalType>();
-                if (cell.NeighbourBottom != null)
-                {
-                    NormalItem nitem = cell.NeighbourBottom.Item as NormalItem;
-                    if (nitem != null)
-                    {
-                        types.Add(nitem.ItemType);
-                    }
-                }
-
-                if (cell.NeighbourLeft != null)
-                {
-                    NormalItem nitem = cell.NeighbourLeft.Item as NormalItem;
-                    if (nitem != null)
-                    {
-                        types.Add(nitem.ItemType);
-                    }
-                }
-
-                // item.SetType(Utils.GetRandomNormalTypeExcept(types.ToArray()));
-                // item.SetView();
-                // item.SetViewRoot(m_root);
-
-                cell.Assign(item);
-                // cell.ApplyItemPosition(false);
-            }
-        }
-
-        for (int x = 0; x < boardSizeX; x++)
-        {
-            for (int y = 0; y < boardSizeY; y++)
-            {
-                Cell cell = m_cells[x, y];
-                NormalItem item = cell.Item as NormalItem;
+                var item = new NormalItem();
 
                 item.SetType(GetRandomTypeFromPool());
                 item.SetView();
                 item.SetViewRoot(m_root);
 
+                cell.Assign(item);
                 cell.ApplyItemPosition(false);
             }
         }
     }
 
-    Dictionary<NormalItem.eNormalType, int> typesPool =
-        new Dictionary<NormalItem.eNormalType, int>();
-
-    void GenerateTypesPool()
+    private void GenerateTypesPool()
     {
-        typesPool.Clear();
-        var count = boardSizeX * boardSizeY / 3;
+        m_typesPool.Clear();
+        var groupCount = boardSizeX * boardSizeY / 3;
+
+        // 8 gr 7 tp - 5 gr 7 tp
 
         var allNormalTypes = Utils.GetAllNormalTypes();
-        for (int i = 0; i < allNormalTypes.Length; i++)
+        int fixedTypeCount = groupCount,
+            randomTypeCount = -1;
+
+        if (groupCount > allNormalTypes.Length)
         {
-            typesPool.Add(allNormalTypes[i], 3);
+            fixedTypeCount = allNormalTypes.Length;
+            randomTypeCount = groupCount - fixedTypeCount;
         }
 
-        for (int i = allNormalTypes.Length; i < count; i++)
+        for (int i = 0; i < fixedTypeCount; i++)
+        {
+            m_typesPool.Add(allNormalTypes[i], 3);
+        }
+
+        for (int i = 0; i < randomTypeCount; i++)
         {
             var type = Utils.GetRandomNormalType();
-            typesPool[type] += 3;
+            m_typesPool[type] += 3;
         }
-
-        // for (int i = 0; i < count; i++)
-        // {
-        //     var type = Utils.GetRandomNormalType();
-        //     if (!typesPool.ContainsKey(type))
-        //         typesPool.Add(type, 3);
-        //     else
-        //         typesPool[type] += 3;
-        // }
     }
 
-    NormalItem.eNormalType GetRandomTypeFromPool()
+    private NormalItem.eNormalType GetRandomTypeFromPool()
     {
-        if (typesPool.Count == 0)
+        if (m_typesPool.Count == 0)
             throw new System.Exception("Types pool is empty!");
 
         int total = 0;
 
         // Sum all remaining counts
-        foreach (var pair in typesPool)
+        foreach (var pair in m_typesPool)
             total += pair.Value;
 
         int random = UnityEngine.Random.Range(0, total);
         int current = 0;
 
-        foreach (var pair in typesPool)
+        foreach (var pair in m_typesPool)
         {
             current += pair.Value;
 
             if (random < current)
             {
-                typesPool[pair.Key]--;
+                m_typesPool[pair.Key]--;
 
-                if (typesPool[pair.Key] <= 0)
-                    typesPool.Remove(pair.Key);
+                if (m_typesPool[pair.Key] <= 0)
+                    m_typesPool.Remove(pair.Key);
 
                 return pair.Key;
             }
@@ -291,8 +258,7 @@ public class Board
             .View.DOMove(cell1.transform.position, 0.3f)
             .OnComplete(() =>
             {
-                if (callback != null)
-                    callback();
+                callback?.Invoke();
             });
     }
 

@@ -50,7 +50,6 @@ public class BoardController : MonoBehaviour
     private void Fill()
     {
         m_board.Fill();
-        // FindMatchesAndCollapse();
     }
 
     private void OnGameStateChange(GameManager.eStateGame state)
@@ -65,7 +64,6 @@ public class BoardController : MonoBehaviour
                 break;
             case GameManager.eStateGame.GAME_OVER:
                 m_gameOver = true;
-                StopHints();
                 break;
         }
     }
@@ -76,16 +74,6 @@ public class BoardController : MonoBehaviour
             return;
         if (IsBusy)
             return;
-
-        if (!m_hintIsShown)
-        {
-            m_timeAfterFill += Time.deltaTime;
-            if (m_timeAfterFill > m_gameSettings.TimeForHint)
-            {
-                m_timeAfterFill = 0f;
-                ShowHint();
-            }
-        }
 
         if (Input.GetMouseButtonDown(0) && !m_clicked)
         {
