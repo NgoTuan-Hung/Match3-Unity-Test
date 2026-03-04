@@ -96,5 +96,7 @@ public class Cell : MonoBehaviour
 
     internal void FinishItemMoveIfAny() => Item?.FinishMoveIfAny();
 
+    internal bool HasItemStillMoving() => !IsEmpty && Item.IsMoving();
+
     internal void SetAsBottomCell() => IsBottomCell = true;
 }

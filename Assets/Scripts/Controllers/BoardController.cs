@@ -110,6 +110,8 @@ public class BoardController : MonoBehaviour
         {
             ResetRayCast();
         }
+
+        m_board.UpdateBottomCell();
     }
 
     private void ResetRayCast()

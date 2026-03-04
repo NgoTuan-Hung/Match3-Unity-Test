@@ -279,8 +279,9 @@ public class Board
             m_bottomTypesCount.Add(item.ItemType, 0);
         }
 
+        m_bottomTypesCount[item.ItemType]++;
         int putIndex = TotalBottomItem++;
-        if (m_bottomTypesCount[item.ItemType] >= 1)
+        if (m_bottomTypesCount[item.ItemType] >= 2)
         {
             for (int i = TotalBottomItem - 2; i >= 0; i--)
             {
@@ -297,10 +298,7 @@ public class Board
         }
 
         m_bottomCells[putIndex].Assign(item);
-        item.MoveToPosition(
-            m_bottomCells[putIndex].transform.position,
-            () => HandlePlayBottomCell(item)
-        );
+        item.MoveToPosition(m_bottomCells[putIndex].transform.position);
     }
 
     public void PutItemToTop(Cell cell)
@@ -316,22 +314,21 @@ public class Board
         var toCell = item.PreviousCell;
         cell.Free();
 
+        m_bottomTypesCount[item.ItemType]--;
+        TotalBottomItem--;
         var cellIndex = Array.IndexOf(m_bottomCells, cell);
         if (cellIndex < BottomCellCount - 1 && !m_bottomCells[cellIndex + 1].IsEmpty)
             ShiftBottomItemsToLeft(cellIndex + 1, 1);
-        TotalBottomItem--;
 
         toCell.Assign(item);
         item.View.DOMove(toCell.transform.position, 0.3f);
-
-        m_bottomTypesCount[item.ItemType]--;
     }
 
     void ShiftBottomItemsToRight(int index)
     {
         for (int i = TotalBottomItem - 2; i >= index; i--)
         {
-            TransferItem(m_bottomCells[i], m_bottomCells[i + 1]);
+            TransferBottomItem(m_bottomCells[i], m_bottomCells[i + 1]);
         }
     }
 
@@ -340,41 +337,69 @@ public class Board
         for (int i = startIndex; i < BottomCellCount; i++)
         {
             if (!m_bottomCells[i].IsEmpty)
-                TransferItem(m_bottomCells[i], m_bottomCells[i - shiftValue]);
+                TransferBottomItem(m_bottomCells[i], m_bottomCells[i - shiftValue]);
         }
     }
 
-    void TransferItem(Cell from, Cell to)
+    void TransferBottomItem(Cell from, Cell to)
     {
         Item item = from.Item;
+        from.FinishItemMoveIfAny();
         from.Free();
         to.Assign(item);
-        to.FinishItemMoveIfAny();
         item.View.transform.position = to.transform.position;
     }
 
-    void HandlePlayBottomCell(NormalItem item)
+    /// <summary>
+    /// Handle Explosion and Shift
+    /// </summary>
+    public void UpdateBottomCell()
     {
-        var cellIndex = Array.IndexOf(m_bottomCells, item.Cell);
-        if (m_bottomTypesCount[item.ItemType] == 2)
+        bool anyItemIsMoving = false;
+
+        for (int i = 0; i < TotalBottomItem; i++)
         {
-            for (int i = 0; i < 3; i++)
-                m_bottomCells[cellIndex - i].ExplodeItem();
+            var cell = m_bottomCells[i];
+            var item = cell.Item as NormalItem;
 
-            ShiftBottomItemsToLeft(cellIndex + 1, 3);
-            TotalBottomItem -= 3;
+            anyItemIsMoving = cell.HasItemStillMoving() || anyItemIsMoving;
 
-            m_bottomTypesCount[item.ItemType] = 0;
+            bool explode = true;
+            if (m_bottomTypesCount[item.ItemType] >= 3)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    var cellIndx = i + j;
+                    var nbCell = m_bottomCells[cellIndx];
+                    if (
+                        cellIndx >= BottomCellCount
+                        || !nbCell.IsSameType(cell)
+                        || nbCell.HasItemStillMoving()
+                    )
+                    {
+                        explode = false;
+                        break;
+                    }
+                }
 
-            if (RemainedBoardItem == 0)
-                m_gameManager.GameWin();
+                if (explode)
+                {
+                    for (int j = 0; j < 3; j++)
+                        m_bottomCells[i + j].ExplodeItem();
+                    ShiftBottomItemsToLeft(i + 3, 3);
+                    TotalBottomItem -= 3;
+                    m_bottomTypesCount[item.ItemType] -= 3;
+
+                    if (RemainedBoardItem == 0)
+                        m_gameManager.GameWin();
+                }
+            }
         }
-        else
-            m_bottomTypesCount[item.ItemType]++;
 
         if (
             TotalBottomItem == BottomCellCount
             && m_gameManager.LevelMode == GameManager.eLevelMode.MOVES
+            && !anyItemIsMoving
         )
             m_gameManager.GameOver();
     }

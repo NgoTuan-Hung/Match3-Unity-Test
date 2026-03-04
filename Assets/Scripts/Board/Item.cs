@@ -27,9 +27,9 @@ public class Item
         }
     }
 
-    public void MoveToPosition(Vector3 pos, Action complete)
+    public void MoveToPosition(Vector3 pos)
     {
-        m_moveTween = View.DOMove(pos, 0.3f).OnComplete(() => complete?.Invoke());
+        m_moveTween = View.DOMove(pos, 0.3f);
     }
 
     public void FinishMoveIfAny()
@@ -40,6 +40,8 @@ public class Item
             m_moveTween = null;
         }
     }
+
+    public bool IsMoving() => m_moveTween != null && m_moveTween.IsActive();
 
     public void Free()
     {
